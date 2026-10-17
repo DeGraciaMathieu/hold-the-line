@@ -1,0 +1,11 @@
+{
+  "name": "hold-the-line",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "npx serve .",
+    "test": "node --test",
+    "test:watch": "node --test --watch"
+  }
+}
