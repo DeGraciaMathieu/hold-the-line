@@ -377,7 +377,7 @@ h3{font-size:max(10px,calc(var(--px)*3.8));letter-spacing:.16em;text-transform:u
 
 <script type="module">
 import {
-  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,COMBO_TIME,COIN_RADIUS,TURRET_RANGE,DT_MAX,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,WEAP,ORDER,WLVL,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
+  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,COMBO_TIME,TURRET_RANGE,DT_MAX,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_HP_BONUS,PERK_FORT_BONUS,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,WEAP,ORDER,WLVL,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
 } from './src/config.js';
 import { createRng } from './src/rules/rng.js';
 import { isBossWave,waveSize,spawnGap,zombieHp,bossHp,isBaseIntact,waveBonus,isPerkWave,reinforcePrice } from './src/rules/progression.js';
@@ -387,6 +387,7 @@ import { pushOutOfRect,pushOutOfProps } from './src/rules/collision.js';
 import { isWaveCleared,buildWaveQueue,edgePoint } from './src/rules/wave.js';
 import { movePlayer } from './src/rules/player.js';
 import { resolveHit,coinDrop,leechHeal,playerTakesHit,baseTakesHit } from './src/rules/combat.js';
+import { pickupRadius,coinValue } from './src/rules/coins.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -1529,7 +1530,7 @@ function updateParts(dt){
 }
 
 function updateCoins(dt){
-  const p=G.player,rad=COIN_RADIUS*(1+PERK_MAGNET_RADIUS_BONUS*PK('magnet'));
+  const p=G.player,rad=pickupRadius(G.perks);
   for(const c of G.coins){
     c.t+=dt;
     const dx=p.x-c.x,dy=p.y-c.y,d=Math.hypot(dx,dy)||1;
@@ -1538,7 +1539,7 @@ function updateCoins(dt){
     else{c.vz-=230*dt;c.z+=c.vz*dt;
       if(c.z<0){c.z=0;if(c.vz<-30){c.vz*=-.45;c.vx*=.6;c.vy*=.6;if(!c.clink){c.clink=true;sfx('coinDrop',c.x,c.y);}}else{c.vz=0;c.vx*=.8;c.vy*=.8;}}}
     c.x+=c.vx*dt;c.y+=c.vy*dt;
-    if(c.mag&&d<7){c.dead=true;const v=Math.round(c.v*(1+PERK_MAGNET_COIN_BONUS*PK('magnet')));G.money+=v;G.earned+=v;AU.streak=Math.min(AU.streak+1,12);G.coinStreakT=.7;G.fx.money=true;sfx('coin');
+    if(c.mag&&d<7){c.dead=true;const v=coinValue(c.v,G.perks);G.money+=v;G.earned+=v;AU.streak=Math.min(AU.streak+1,12);G.coinStreakT=.7;G.fx.money=true;sfx('coin');
       floatTxt(p.x+rand(-4,4),p.y-22,'+'+v,'#e9b949',1,.5);
       for(let i=0;i<3;i++)P({type:'spark',x:p.x,y:p.y,z:10,vx:rand(-30,30),vy:rand(-20,20),vz:rand(20,50),life:.25,col:'#ffe08a'});}
   }
