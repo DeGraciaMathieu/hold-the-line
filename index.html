@@ -384,6 +384,7 @@ import { isBossWave,waveSize,spawnGap,zombieHp,bossHp,isBaseIntact,waveBonus,isP
 import { magSize,reloadTime,isUnlocked,muzzlePos } from './src/rules/weapons.js';
 import { turretCapacity,turretRate } from './src/rules/turrets.js';
 import { pushOutOfRect,pushOutOfProps } from './src/rules/collision.js';
+import { isWaveCleared } from './src/rules/wave.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -1139,7 +1140,7 @@ function killZombie(z,dx,dy,src){
   if(z.type==='bloater')explode(z.x,z.y,40,80,'acid');
   checkWaveEnd();
 }
-function checkWaveEnd(){if(G.waveActive&&!G.bossPending&&G.queue.length===0&&!G.zombies.some(q=>!q.dead))waveCleared();}
+function checkWaveEnd(){if(isWaveCleared(G))waveCleared();}
 function hurtPlayer(n,src){
   const p=G.player;if(p.inv>0||G.over||p.dead)return;
   p.hp-=n;p.inv=PLAYER_INV_TIME;G.freeze=Math.max(G.freeze,.06);shake(.5);G.hurtV=1;G.fx.lifeHit=true;
