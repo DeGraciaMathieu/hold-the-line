@@ -1,0 +1,23 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/run-tests.sh\"",
+            "timeout": 120,
+            "statusMessage": "Lancement des tests…"
+          },
+          {
+            "type": "agent",
+            "prompt": "Tu vérifies la cohérence de la documentation vivante du jeu Dernier Rempart. Cette documentation est la prose écrite à la main et lue par le joueur : dans index.html, l'écran titre (le paragraphe « Campagne · 4 refuges · 20 vagues », le texte d'introduction qui commence par « De la ferme au col enneigé », la légende des touches dans <dl class=\"keys\">), l'aide de l'écran d'atout (« Touches 1, 2 ou 3… »), l'aide de l'écran de pause (« Échap pour reprendre… »), le texte de l'écran de victoire (« Le Titan est tombé… ») ; et dans README.md, la section « Commandes en jeu » ainsi que la description du jeu en tête de fichier. Ignore entièrement tout ce qui est rempli dynamiquement par src/render/hud.js, src/render/screens.js et src/loop/flow.js (HUD, bannières, eyebrows avec un id, cartes de boutique, liste d'atouts, route, statistiques, record) ainsi que les descriptions d'armes, d'atouts et de refuges qui viennent de src/config.js : seule la prose fixe doit rester exacte. Exécute : git diff HEAD -- src index.html README.md. Si rien de pertinent n'a changé, ou si la documentation décrit encore fidèlement le code (touches et actions dans src/input/keyboard.js, src/input/pointer.js et src/input/ui.js ; nombre de refuges et de vagues dans LEVELS et WAVES_PER_LEVEL de src/config.js ; déroulé de la campagne dans src/loop/flow.js), réponds exactement : accept. Sinon réponds : block, puis liste chaque passage périmé en le citant, en donnant son emplacement et la correction que le code impose désormais. Ne réécris pas la documentation toi-même et ne signale pas de problème de style.",
+            "model": "claude-sonnet-5-5",
+            "timeout": 120,
+            "statusMessage": "Vérification de la documentation…"
+          }
+        ]
+      }
+    ]
+  }
+}
