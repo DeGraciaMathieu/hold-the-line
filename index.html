@@ -377,10 +377,11 @@ h3{font-size:max(10px,calc(var(--px)*3.8));letter-spacing:.16em;text-transform:u
 
 <script type="module">
 import {
-  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_SPEED,PLAYER_RELOAD_SPEED_FACTOR,MINIGUN_SPIN_SLOW,PLAYER_INV_TIME,PLAYER_HURT_KNOCK,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,CRIT_BASE_CHANCE,CRIT_MULT,COMBO_CAP,COMBO_COIN_BONUS,COMBO_TIME,COIN_RADIUS,TURRET_BASE_COUNT,TURRET_RATE,TURRET_RANGE,DT_MAX,PERK_MAG_BONUS,PERK_RELOAD_FACTOR,PERK_DMG_BONUS,PERK_CRIT_BONUS,PERK_PYRO_CHANCE,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_SPEED_BONUS,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_LEECH_HP,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,PERK_TURRET_RATE_FACTOR,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,SKIN,WEAP,ORDER,WLVL,PIERCE_ARMOR,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
+  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_SPEED,PLAYER_RELOAD_SPEED_FACTOR,MINIGUN_SPIN_SLOW,PLAYER_INV_TIME,PLAYER_HURT_KNOCK,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,CRIT_BASE_CHANCE,CRIT_MULT,COMBO_CAP,COMBO_COIN_BONUS,COMBO_TIME,COIN_RADIUS,TURRET_BASE_COUNT,TURRET_RATE,TURRET_RANGE,DT_MAX,PERK_DMG_BONUS,PERK_CRIT_BONUS,PERK_PYRO_CHANCE,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_SPEED_BONUS,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_LEECH_HP,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,PERK_TURRET_RATE_FACTOR,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,WEAP,ORDER,WLVL,PIERCE_ARMOR,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
 } from './src/config.js';
 import { createRng } from './src/rules/rng.js';
 import { isBossWave,waveSize,spawnGap,zombieHp,bossHp,isBaseIntact,waveBonus,isPerkWave,reinforcePrice } from './src/rules/progression.js';
+import { magSize,reloadTime,isUnlocked,muzzlePos } from './src/rules/weapons.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -832,9 +833,9 @@ const cam={x:BX-W/2,y:BY-H/2};
 const mouse={sx:W/2+40,sy:H/2,down:false,latched:false};
 const K={};
 const PK=id=>(G&&G.perks[id])||0;
-const MAG=id=>Math.round(WEAP[id].mag*(1+PERK_MAG_BONUS*PK('mag')));
-const RLD=w=>w.reload*Math.pow(PERK_RELOAD_FACTOR,PK('reload'));
-const unlocked=id=>G.endless||WLVL[id]<=G.level;
+const MAG=id=>magSize(id,G.perks);
+const RLD=w=>reloadTime(w,G.perks);
+const unlocked=id=>isUnlocked(id,G.level,G.endless);
 const levelOf=()=>LEVELS[Math.min(G.level,LEVELS.length-1)];
 
 function newGame(){
@@ -989,10 +990,6 @@ function travel(){
 /* =========================================================
    Joueur et armes
    ========================================================= */
-function muzzlePos(p,w){
-  const hx=p.x+p.face*2,hy=p.y-GH,[mx,my]=w.spr.muzzle,ly=p.face<0?-my:my,c=Math.cos(p.ang),s=Math.sin(p.ang),k=mx-p.kick;
-  return[hx+c*k-s*ly,hy+s*k+c*ly,hx,hy];
-}
 function ejectCasing(kind,hx,hy,ang,face){
   const c=Math.cos(ang),s=Math.sin(ang),pxp=-s*face,pyp=c*face,big=kind==='shell';
   P({type:big?'shell':'casing',x:hx,y:hy+GH,z:GH,vx:-c*rand(10,30)+pxp*-rand(20,45),vy:-s*rand(10,30)+pyp*-rand(20,45)*.6,vz:rand(55,90),life:3,
