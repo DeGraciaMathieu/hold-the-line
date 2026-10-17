@@ -388,6 +388,7 @@ import { isWaveCleared,buildWaveQueue,edgePoint } from './src/rules/wave.js';
 import { movePlayer } from './src/rules/player.js';
 import { resolveHit,coinDrop,leechHeal,playerTakesHit,baseTakesHit } from './src/rules/combat.js';
 import { pickupRadius,coinValue } from './src/rules/coins.js';
+import { purchasePrice,applyPurchase } from './src/rules/shop.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -1967,16 +1968,14 @@ function renderShop(flashKey,ok){
 }
 $('#shop').addEventListener('click',e=>{
   const bt=e.target.closest('[data-act]');if(!bt||bt.disabled)return;
-  const act=bt.dataset.act,id=bt.dataset.id,p=G.player,b=G.base;let price=0,apply;
-  if(act==='buy'){const w=WEAP[id];price=w.price;apply=()=>{p.owned[id]=true;p.mag[id]=MAG(id);p.res[id]=w.ammo?w.ammo.n:Infinity;p.w=id;};}
-  else if(act==='ammo'){const w=WEAP[id];price=w.ammo.p;apply=()=>{p.res[id]+=w.ammo.n;};}
-  else if(act==='repair'){price=REPAIR_PRICE;apply=()=>{b.hp=Math.min(b.maxHp,b.hp+REPAIR_HP);};}
-  else if(act==='reinforce'){price=reinforcePrice(G.reinforce);apply=()=>{b.maxHp+=REINFORCE_HP;b.hp=Math.min(b.maxHp,b.hp+REINFORCE_HP);G.reinforce++;};}
-  else if(act==='heal'){price=HEAL_PRICE;apply=()=>{p.hp=p.maxHp;};}
-  else if(act==='turret'){price=TURRET_PRICE;apply=addTurret;}
+  const act=bt.dataset.act,id=bt.dataset.id,price=purchasePrice(act,id,G.reinforce);
   const key=id||act;
   if(G.money<price){sfx('deny');renderShop(key,false);pulse($('#wallet'),'nope');return;}
-  G.money-=price;apply();sfx('buy');renderShop(key,true);pulse($('#wallet'),'bump');
+  G.money-=price;
+  const bought=applyPurchase(act,id,{player:G.player,base:G.base,reinforce:G.reinforce,perks:G.perks});
+  if(bought.player)Object.assign(G.player,bought.player);if(bought.base)Object.assign(G.base,bought.base);
+  if(bought.reinforce!==undefined)G.reinforce=bought.reinforce;if(bought.addTurret)addTurret();
+  sfx('buy');renderShop(key,true);pulse($('#wallet'),'bump');
 });
 function nextFromShop(){initAudio();if(G.levelDone)travel();else startWave();}
 function statsLine(){return{acc:G.shots?Math.round(G.hits/G.shots*100):0};}
