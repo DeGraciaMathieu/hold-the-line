@@ -377,7 +377,7 @@ h3{font-size:max(10px,calc(var(--px)*3.8));letter-spacing:.16em;text-transform:u
 
 <script type="module">
 import {
-  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_SPEED,PLAYER_RELOAD_SPEED_FACTOR,MINIGUN_SPIN_SLOW,PLAYER_INV_TIME,PLAYER_HURT_KNOCK,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,CRIT_BASE_CHANCE,CRIT_MULT,COMBO_CAP,COMBO_COIN_BONUS,COMBO_TIME,COIN_RADIUS,TURRET_RANGE,DT_MAX,PERK_DMG_BONUS,PERK_CRIT_BONUS,PERK_PYRO_CHANCE,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_SPEED_BONUS,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_LEECH_HP,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,WEAP,ORDER,WLVL,PIERCE_ARMOR,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
+  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_INV_TIME,PLAYER_HURT_KNOCK,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,CRIT_BASE_CHANCE,CRIT_MULT,COMBO_CAP,COMBO_COIN_BONUS,COMBO_TIME,COIN_RADIUS,TURRET_RANGE,DT_MAX,PERK_DMG_BONUS,PERK_CRIT_BONUS,PERK_PYRO_CHANCE,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_LEECH_HP,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,WEAP,ORDER,WLVL,PIERCE_ARMOR,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
 } from './src/config.js';
 import { createRng } from './src/rules/rng.js';
 import { isBossWave,waveSize,spawnGap,zombieHp,bossHp,isBaseIntact,waveBonus,isPerkWave,reinforcePrice } from './src/rules/progression.js';
@@ -385,6 +385,7 @@ import { magSize,reloadTime,isUnlocked,muzzlePos } from './src/rules/weapons.js'
 import { turretCapacity,turretRate } from './src/rules/turrets.js';
 import { pushOutOfRect,pushOutOfProps } from './src/rules/collision.js';
 import { isWaveCleared,buildWaveQueue,edgePoint } from './src/rules/wave.js';
+import { movePlayer } from './src/rules/player.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -1226,14 +1227,7 @@ function updatePlayer(dt){
   if(p.dead)return;
   let ix=0,iy=0;
   if(!G.over){ix=(K.KeyD||K.ArrowRight?1:0)-(K.KeyA||K.ArrowLeft?1:0);iy=(K.KeyS||K.ArrowDown?1:0)-(K.KeyW||K.ArrowUp?1:0);}
-  const il=Math.hypot(ix,iy)||1;ix/=il;iy/=il;
-  const sp=PLAYER_SPEED*(1+PERK_SPEED_BONUS*PK('speed'))*(p.reload>0?PLAYER_RELOAD_SPEED_FACTOR:1)*(w.spin?1-MINIGUN_SPIN_SLOW*p.spin:1);
-  p.vx=lerp(p.vx,ix*sp,Math.min(1,dt*14));p.vy=lerp(p.vy,iy*sp,Math.min(1,dt*14));
-  p.kx*=Math.exp(-dt*10);p.ky*=Math.exp(-dt*10);
-  p.x+=(p.vx+p.kx)*dt;p.y+=(p.vy+p.ky)*dt;
-  pushProps(p,p.r);pushRect(p,p.r);
-  p.x=clamp(p.x,14,WW-14);p.y=clamp(p.y,16,WH-10);
-  p.moving=ix!==0||iy!==0;
+  Object.assign(p,movePlayer(p,{ix,iy},dt,{weapon:w,perks:G.perks,base:G.base,props:G.props}));
   if(p.moving){p.anim+=dt*9;p.stepT-=dt;if(p.stepT<=0){p.stepT=.27;dust(p.x-p.face*2,p.y,2);sfx('step');}}else p.anim=0;
 
   const mwx=mouse.sx+CX,mwy=mouse.sy+CY;
