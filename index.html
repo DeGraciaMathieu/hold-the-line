@@ -377,7 +377,7 @@ h3{font-size:max(10px,calc(var(--px)*3.8));letter-spacing:.16em;text-transform:u
 
 <script type="module">
 import {
-  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_INV_TIME,PLAYER_HURT_KNOCK,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,CRIT_BASE_CHANCE,CRIT_MULT,COMBO_CAP,COMBO_COIN_BONUS,COMBO_TIME,COIN_RADIUS,TURRET_RANGE,DT_MAX,PERK_DMG_BONUS,PERK_CRIT_BONUS,PERK_PYRO_CHANCE,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_LEECH_HP,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,WEAP,ORDER,WLVL,PIERCE_ARMOR,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
+  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_INV_TIME,PLAYER_HURT_KNOCK,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,COMBO_CAP,COMBO_COIN_BONUS,COMBO_TIME,COIN_RADIUS,TURRET_RANGE,DT_MAX,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_LEECH_HP,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,WEAP,ORDER,WLVL,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
 } from './src/config.js';
 import { createRng } from './src/rules/rng.js';
 import { isBossWave,waveSize,spawnGap,zombieHp,bossHp,isBaseIntact,waveBonus,isPerkWave,reinforcePrice } from './src/rules/progression.js';
@@ -386,6 +386,7 @@ import { turretCapacity,turretRate } from './src/rules/turrets.js';
 import { pushOutOfRect,pushOutOfProps } from './src/rules/collision.js';
 import { isWaveCleared,buildWaveQueue,edgePoint } from './src/rules/wave.js';
 import { movePlayer } from './src/rules/player.js';
+import { resolveHit } from './src/rules/combat.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -1086,19 +1087,14 @@ function melee(){
 function hitZombie(z,dmg,dx,dy,knock,src){
   if(z.dead)return;
   const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;
-  const fl=src==='flamer',own=!!WEAP[src]||src==='melee';
-  if(own)dmg*=1+PERK_DMG_BONUS*PK('dmg');
-  let crit=false;if(own&&src!=='melee'&&!fl&&rng()<CRIT_BASE_CHANCE+PERK_CRIT_BONUS*PK('crit')){crit=true;dmg*=CRIT_MULT;}
-  let armored=false;
-  if(z.t.armor&&src!=='boom'&&src!=='fire'&&src!=='gore'&&!PIERCE_ARMOR[src]){armored=true;dmg=Math.max(1,dmg-z.t.armor);}
-  dmg=Math.max(1,Math.round(dmg));
+  const hit=resolveHit({dmg,src,target:z.t,perks:G.perks},rng),{fl,own,crit,armored}=hit;dmg=hit.dmg;
   z.hp-=dmg;z.flash=fl?.03:.07;z.squash=fl?.04:(z.boss?.05:.1);z.stun=Math.max(z.stun,z.boss?.03:.1);
   const kb=knock/z.t.mass;z.kx+=dx*kb;z.ky+=dy*kb;
   if(armored&&!fl){sparks(z.x,z.y,GH,3,-dx,-dy,'#e8eef4');sfx('clang',z.x,z.y);}
   blood(z.x,z.y,dx,dy,fl?1:(armored?2:4+Math.min(10,dmg/6)|0),z.type==='bloater'||(z.boss&&z.t.acid));
   if(!fl||rng()<.12)floatTxt(z.x+rand(-3,3),z.y-z.S.H+2,String(dmg),crit?'#ffe36a':fl?'#ff9a3a':armored?'#9aa4b4':'#f4efe0',crit?2:1);
   if(own){G.hitMark=.09;if(!fl){sfx('hit',z.x,z.y);sfx('marker');}if(crit)sfx('crit');
-    if(PK('pyro')&&!fl&&rng()<PERK_PYRO_CHANCE*PK('pyro'))z.burn=Math.max(z.burn||0,PYRO_BURN_TIME);}
+    if(hit.burn)z.burn=Math.max(z.burn||0,PYRO_BURN_TIME);}
   if(z.boss)G.fx.bossHit=true;
   if(WEAP[src]&&WEAP[src].hitstop)G.freeze=Math.max(G.freeze,WEAP[src].hitstop);
   if(z.hp<=0)killZombie(z,dx,dy,src);
