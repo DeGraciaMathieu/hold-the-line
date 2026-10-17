@@ -53,3 +53,28 @@ test('Vampire rend 2 PV par niveau, sans dépasser le maximum ni soigner un surv
   assert.equal(leechHeal({ hp: 50, maxHp: 100, dead: true }, { leech: 1 }), null);
   assert.equal(leechHeal({ hp: 50, maxHp: 100, dead: false }, {}), null);
 });
+
+import { playerTakesHit, baseTakesHit } from '../src/rules/combat.js';
+
+test('un survivant blessé perd les PV, devient invincible 0,55 s et recule à l’opposé de l’agresseur', () => {
+  const hit = playerTakesHit({ x: 100, y: 100, hp: 100, inv: 0, kx: 0, ky: 0, dead: false }, 8, { x: 90, y: 100 }, false);
+  assert.deepEqual([hit.hp, hit.inv, hit.kx, hit.ky, hit.down], [92, 0.55, 140, 0, false]);
+});
+
+test('un survivant invincible, mort ou en fin de partie n’encaisse rien', () => {
+  const p = { x: 0, y: 0, hp: 50, inv: 0, kx: 0, ky: 0, dead: false };
+  assert.equal(playerTakesHit({ ...p, inv: 0.3 }, 8, null, false), null);
+  assert.equal(playerTakesHit({ ...p, dead: true }, 8, null, false), null);
+  assert.equal(playerTakesHit(p, 8, null, true), null);
+});
+
+test('le survivant tombe quand ses PV atteignent zéro, sans passer en négatif', () => {
+  const hit = playerTakesHit({ x: 0, y: 0, hp: 5, inv: 0, kx: 0, ky: 0, dead: false }, 8, null, false);
+  assert.deepEqual([hit.hp, hit.down], [0, true]);
+});
+
+test('le rempart encaisse les dégâts et tombe à zéro, sauf une fois la partie finie', () => {
+  assert.deepEqual(baseTakesHit({ hp: 100 }, 30, false), { hp: 70, down: false });
+  assert.deepEqual(baseTakesHit({ hp: 20, maxHp: 400 }, 30, false), { hp: 0, down: true });
+  assert.equal(baseTakesHit({ hp: 100 }, 30, true), null);
+});

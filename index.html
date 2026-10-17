@@ -377,7 +377,7 @@ h3{font-size:max(10px,calc(var(--px)*3.8));letter-spacing:.16em;text-transform:u
 
 <script type="module">
 import {
-  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_INV_TIME,PLAYER_HURT_KNOCK,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,COMBO_TIME,COIN_RADIUS,TURRET_RANGE,DT_MAX,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,WEAP,ORDER,WLVL,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
+  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,COMBO_TIME,COIN_RADIUS,TURRET_RANGE,DT_MAX,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,WEAP,ORDER,WLVL,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
 } from './src/config.js';
 import { createRng } from './src/rules/rng.js';
 import { isBossWave,waveSize,spawnGap,zombieHp,bossHp,isBaseIntact,waveBonus,isPerkWave,reinforcePrice } from './src/rules/progression.js';
@@ -386,7 +386,7 @@ import { turretCapacity,turretRate } from './src/rules/turrets.js';
 import { pushOutOfRect,pushOutOfProps } from './src/rules/collision.js';
 import { isWaveCleared,buildWaveQueue,edgePoint } from './src/rules/wave.js';
 import { movePlayer } from './src/rules/player.js';
-import { resolveHit,coinDrop,leechHeal } from './src/rules/combat.js';
+import { resolveHit,coinDrop,leechHeal,playerTakesHit,baseTakesHit } from './src/rules/combat.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -1130,23 +1130,21 @@ function killZombie(z,dx,dy,src){
 }
 function checkWaveEnd(){if(isWaveCleared(G))waveCleared();}
 function hurtPlayer(n,src){
-  const p=G.player;if(p.inv>0||G.over||p.dead)return;
-  p.hp-=n;p.inv=PLAYER_INV_TIME;G.freeze=Math.max(G.freeze,.06);shake(.5);G.hurtV=1;G.fx.lifeHit=true;
-  let nx=0,ny=1;if(src){nx=p.x-src.x;ny=p.y-src.y;const l=Math.hypot(nx,ny)||1;nx/=l;ny/=l;}
-  p.kx+=nx*PLAYER_HURT_KNOCK;p.ky+=ny*PLAYER_HURT_KNOCK;
+  const p=G.player,hit=playerTakesHit(p,n,src,G.over);if(!hit)return;
+  const{nx,ny}=hit;p.hp=hit.hp;p.inv=hit.inv;p.kx=hit.kx;p.ky=hit.ky;G.freeze=Math.max(G.freeze,.06);shake(.5);G.hurtV=1;G.fx.lifeHit=true;
   blood(p.x,p.y,nx,ny,9);sfx('hurt');
   floatTxt(p.x,p.y-20,'-'+n,'#ff5a48',1);
-  if(p.hp<=0){p.hp=0;gameOver('player');}
+  if(hit.down)gameOver('player');
 }
 function damageBase(n,x,y){
-  const b=G.base;if(G.over)return;
-  b.hp-=n;b.flash=.1;b.shake=.18;b.alert=1.4;G.fx.baseHit=true;
+  const b=G.base,hit=baseTakesHit(b,n,G.over);if(!hit)return;
+  b.hp=hit.hp;b.flash=.1;b.shake=.18;b.alert=1.4;G.fx.baseHit=true;
   chips(x,y,rand(4,14),5,['#6b4a31','#5e412b','#8c7c55','#3f2b1d'],x-b.x,y-b.y);
   dust(x,y,3,'#6a5a46');
   sfx('baseHit',x,y);sfx('wood',x,y);
   if(x>CX&&x<CX+W&&y>CY&&y<CY+H)shake(.1);
   floatTxt(x,y-b.h-4,'-'+n,'#ff8a3a',1);
-  if(b.hp<=0){b.hp=0;gameOver('base');}
+  if(hit.down)gameOver('base');
 }
 function gameOver(reason){
   if(G.over)return;G.over=true;G.reason=reason;mouse.down=false;
