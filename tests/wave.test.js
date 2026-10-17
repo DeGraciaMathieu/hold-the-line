@@ -36,3 +36,18 @@ test('en mode infini la vague puise dans le quatrième mix du refuge', () => {
   const q = buildWaveQueue(LEVELS[0], { lw: 7, wave: 25, bossWave: false, endless: true }, createRng(3));
   assert.ok(q.every(k => k in LEVELS[0].mix[3]));
 });
+
+import { edgePoint } from '../src/rules/wave.js';
+import { WW, WH } from '../src/config.js';
+
+test('les zombies apparaissent juste hors du monde, sur le bord demandé', () => {
+  const rng = createRng(11);
+  const [nx, ny] = edgePoint(0, rng);
+  assert.equal(ny, -14); assert.ok(nx >= 40 && nx <= WW - 40);
+  const [ex, ey] = edgePoint(1, rng);
+  assert.equal(ex, WW + 14); assert.ok(ey >= 40 && ey <= WH - 40);
+  const [, sy] = edgePoint(2, rng);
+  assert.equal(sy, WH + 14);
+  const [wx] = edgePoint(3, rng);
+  assert.equal(wx, -14);
+});

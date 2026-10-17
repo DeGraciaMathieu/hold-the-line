@@ -384,7 +384,7 @@ import { isBossWave,waveSize,spawnGap,zombieHp,bossHp,isBaseIntact,waveBonus,isP
 import { magSize,reloadTime,isUnlocked,muzzlePos } from './src/rules/weapons.js';
 import { turretCapacity,turretRate } from './src/rules/turrets.js';
 import { pushOutOfRect,pushOutOfProps } from './src/rules/collision.js';
-import { isWaveCleared,buildWaveQueue } from './src/rules/wave.js';
+import { isWaveCleared,buildWaveQueue,edgePoint } from './src/rules/wave.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -930,11 +930,9 @@ function spawnZombieAt(type,x,y){
     anim:rng()*4,face:1,S:SPR[type][variant],cfg:ZCFG[type],speed:t.speed*rand(.85,1.15),groan:rand(1,6),dead:false,fr:0,tp:false};
   G.zombies.push(z);return z;
 }
-function edgePoint(side){const m=14;
-  if(side===0)return[rand(40,WW-40),-m];if(side===1)return[WW+m,rand(40,WH-40)];if(side===2)return[rand(40,WW-40),WH+m];return[-m,rand(40,WH-40)];}
-function spawnZombie(type,side){const[x,y]=edgePoint(side);spawnZombieAt(type,x+rand(-8,8),y+rand(-8,8));}
+function spawnZombie(type,side){const[x,y]=edgePoint(side,rng);spawnZombieAt(type,x+rand(-8,8),y+rand(-8,8));}
 function spawnBoss(id){
-  const d=BOSSES[id],side=ri(0,3),[x,y]=edgePoint(side);
+  const d=BOSSES[id],side=ri(0,3),[x,y]=edgePoint(side,rng);
   const hp=bossHp(d.hp,G.wave,G.endless);
   const z={type:'boss',boss:true,id,t:d,x,y,vx:0,vy:0,kx:0,ky:0,hp,max:hp,flash:0,squash:0,stun:0,atk:1,atkAnim:0,anim:0,face:1,
     S:SPRB[id],cfg:BCFG[id],speed:d.speed,groan:3,dead:false,fr:0,tp:false,state:'walk',stT:0,cd:{charge:3,stomp:2,summon:4,spit:2}};

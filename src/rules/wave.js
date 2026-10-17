@@ -19,3 +19,7 @@ export function buildWaveQueue(level,{lw,wave,bossWave,endless},rng){
   for(let i=0;i<total;i++){let r=rng()*sum;for(const k of keys){r-=mix[k];if(r<=0){q.push(k);break;}}if(q.length<=i)q.push(keys[0]);}
   return q;
 }
+
+/* Point d'apparition juste hors du monde, sur le bord demandé (0 nord, 1 est, 2 sud, 3 ouest). */
+export function edgePoint(side,rng){const m=14,rand=(a,b)=>a+rng()*(b-a);
+  if(side===0)return[rand(40,WW-40),-m];if(side===1)return[WW+m,rand(40,WH-40)];if(side===2)return[rand(40,WW-40),WH+m];return[-m,rand(40,WH-40)];}
