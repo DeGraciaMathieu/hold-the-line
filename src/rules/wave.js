@@ -1,5 +1,5 @@
 /* Règles de vague : fin de vague, composition de la file de zombies, point d'apparition. Pures. */
-import { WW,WH,WAVES_PER_LEVEL } from '../config.js';
+import { WW,WH,WAVES_PER_LEVEL,SPAWN_EDGE_MARGIN,SPAWN_CORNER_BUFFER } from '../config.js';
 import { waveSize } from './progression.js';
 
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
@@ -21,5 +21,5 @@ export function buildWaveQueue(level,{lw,wave,bossWave,endless},rng){
 }
 
 /* Point d'apparition juste hors du monde, sur le bord demandé (0 nord, 1 est, 2 sud, 3 ouest). */
-export function edgePoint(side,rng){const m=14,rand=(a,b)=>a+rng()*(b-a);
-  if(side===0)return[rand(40,WW-40),-m];if(side===1)return[WW+m,rand(40,WH-40)];if(side===2)return[rand(40,WW-40),WH+m];return[-m,rand(40,WH-40)];}
+export function edgePoint(side,rng){const m=SPAWN_EDGE_MARGIN,c=SPAWN_CORNER_BUFFER,rand=(a,b)=>a+rng()*(b-a);
+  if(side===0)return[rand(c,WW-c),-m];if(side===1)return[WW+m,rand(c,WH-c)];if(side===2)return[rand(c,WW-c),WH+m];return[-m,rand(c,WH-c)];}

@@ -14,8 +14,18 @@ export const PLAYER_HP=100;
 export const BASE_HP=400;
 export const BARREL_HP=25;
 
+/* Monde : marges de spawn et bornes du joueur */
+export const SPAWN_EDGE_MARGIN=14;
+export const SPAWN_CORNER_BUFFER=40;
+export const WORLD_MARGIN_X=14;
+export const WORLD_MARGIN_Y_TOP=16;
+export const WORLD_MARGIN_Y_BOT=10;
+export const PROP_CULL_RADIUS=30;
+
 /* Joueur */
 export const PLAYER_SPEED=72;
+export const PLAYER_ACCEL=14;
+export const PLAYER_KNOCK_DECAY=10;
 export const PLAYER_RELOAD_SPEED_FACTOR=.85;
 export const MINIGUN_SPIN_SLOW=.45;
 export const PLAYER_INV_TIME=.55;
@@ -37,6 +47,9 @@ export const COMBO_CAP=10;
 export const COMBO_COIN_BONUS=.1;
 export const COMBO_TIME=1.8;
 export const COIN_RADIUS=58;
+export const COIN_REWARD_DIV=8;
+export const COIN_MAX=7;
+export const BOSS_COIN_MAX=30;
 
 /* Tourelles */
 export const TURRET_BASE_COUNT=2;

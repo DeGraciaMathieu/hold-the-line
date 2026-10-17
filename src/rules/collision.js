@@ -1,5 +1,7 @@
 /* Collisions : repousser un corps circulaire hors du rempart (rectangle) et
    hors des accessoires (cercles). Retournent la position corrigée sans muter l'entrée. */
+import { PROP_CULL_RADIUS } from '../config.js';
+
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 
 /* rect : {x0,x1,y0,y1}. Retourne {x,y,hit} ; hit vaut true si le corps touchait le rectangle. */
@@ -15,7 +17,7 @@ export function pushOutOfRect(pos,r,rect){
 /* props : [{x,y,dead,cols:[[cx,cy,cr],…]}]. Retourne {x,y}. */
 export function pushOutOfProps(pos,r,props){
   let{x,y}=pos;
-  for(const o of props){if(o.dead)continue;if(Math.abs(o.x-x)>30||Math.abs(o.y-y)>30)continue;
+  for(const o of props){if(o.dead)continue;if(Math.abs(o.x-x)>PROP_CULL_RADIUS||Math.abs(o.y-y)>PROP_CULL_RADIUS)continue;
     for(const[cx,cy,cr]of o.cols){const dx=x-(o.x+cx),dy=y-(o.y+cy),rr=r+cr,d2=dx*dx+dy*dy;
       if(d2<rr*rr&&d2>1e-4){const d=Math.sqrt(d2),k=(rr-d)/d;x+=dx*k;y+=dy*k;}}}
   return{x,y};
