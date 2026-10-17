@@ -32,3 +32,24 @@ test('Pyromane enflamme la cible sur les balles du joueur, jamais sans l’atout
   assert.equal(resolveHit({ dmg: 20, src: 'pistol', target: {}, perks: {} }, always).burn, false);
   assert.equal(resolveHit({ dmg: 20, src: 'turret', target: {}, perks: { pyro: 2 } }, always).burn, false);
 });
+
+import { coinDrop, leechHeal } from '../src/rules/combat.js';
+
+test('un walker rapporte 10 $ en deux pièces, 20 $ au combo maximal', () => {
+  assert.deepEqual(coinDrop(10, 0, false), { reward: 10, n: 1, v: 10 });
+  assert.deepEqual(coinDrop(10, 10, false), { reward: 20, n: 3, v: 7 });
+  assert.equal(coinDrop(10, 25, false).reward, 20);
+});
+
+test('un boss éparpille sa prime en trente pièces au plus', () => {
+  const d = coinDrop(800, 0, true);
+  assert.deepEqual([d.n, d.v], [30, 27]);
+});
+
+test('Vampire rend 2 PV par niveau, sans dépasser le maximum ni soigner un survivant mort ou intact', () => {
+  assert.deepEqual(leechHeal({ hp: 50, maxHp: 100, dead: false }, { leech: 2 }), { hp: 54, h: 4 });
+  assert.deepEqual(leechHeal({ hp: 99, maxHp: 100, dead: false }, { leech: 1 }), { hp: 100, h: 2 });
+  assert.equal(leechHeal({ hp: 100, maxHp: 100, dead: false }, { leech: 1 }), null);
+  assert.equal(leechHeal({ hp: 50, maxHp: 100, dead: true }, { leech: 1 }), null);
+  assert.equal(leechHeal({ hp: 50, maxHp: 100, dead: false }, {}), null);
+});

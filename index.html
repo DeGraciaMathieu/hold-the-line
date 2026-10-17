@@ -377,7 +377,7 @@ h3{font-size:max(10px,calc(var(--px)*3.8));letter-spacing:.16em;text-transform:u
 
 <script type="module">
 import {
-  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_INV_TIME,PLAYER_HURT_KNOCK,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,COMBO_CAP,COMBO_COIN_BONUS,COMBO_TIME,COIN_RADIUS,TURRET_RANGE,DT_MAX,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_LEECH_HP,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,WEAP,ORDER,WLVL,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
+  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_INV_TIME,PLAYER_HURT_KNOCK,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,COMBO_TIME,COIN_RADIUS,TURRET_RANGE,DT_MAX,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,WEAP,ORDER,WLVL,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
 } from './src/config.js';
 import { createRng } from './src/rules/rng.js';
 import { isBossWave,waveSize,spawnGap,zombieHp,bossHp,isBaseIntact,waveBonus,isPerkWave,reinforcePrice } from './src/rules/progression.js';
@@ -386,7 +386,7 @@ import { turretCapacity,turretRate } from './src/rules/turrets.js';
 import { pushOutOfRect,pushOutOfProps } from './src/rules/collision.js';
 import { isWaveCleared,buildWaveQueue,edgePoint } from './src/rules/wave.js';
 import { movePlayer } from './src/rules/player.js';
-import { resolveHit } from './src/rules/combat.js';
+import { resolveHit,coinDrop,leechHeal } from './src/rules/combat.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -1112,11 +1112,11 @@ function killZombie(z,dx,dy,src){
   for(let i=0;i<(huge?30:big?11:5);i++){const a=a0+rand(-1.2,1.2),s=rand(25,huge?130:95);
     P({type:'gib',x:z.x,y:z.y,z:rand(5,12),vx:Math.cos(a)*s,vy:Math.sin(a)*s*.8,vz:rand(40,huge?150:110),life:3,col:pick([cfg.skin,cfg.skinD,'#8a1c1a',cfg.shirts[0]]),col2:'#c0281f',dcol:'#4a0c0c'});}
   blood(z.x,z.y,dx,dy,huge?50:big?28:16,acid);
-  const reward=Math.round(z.t.reward*(1+Math.min(G.combo,COMBO_CAP)*COMBO_COIN_BONUS)),n=clamp(Math.round(reward/8),1,huge?30:7),v=Math.max(1,Math.round(reward/n));
+  const{n,v}=coinDrop(z.t.reward,G.combo,huge);
   for(let i=0;i<n;i++)G.coins.push({x:z.x,y:z.y,z:8,vx:rand(-40,40)*(huge?2:1),vy:rand(-30,30)*(huge?2:1),vz:rand(60,huge?160:105),v,t:0,seed:rng()*4,mag:false,clink:false});
   G.combo++;G.comboT=COMBO_TIME+(huge?2:0);G.fx.combo=true;G.kills++;G.waveKills++;
   if(own){G.hitMark=.13;G.killMark=.13;
-    if(PK('leech')){const p=G.player,h=PERK_LEECH_HP*PK('leech');if(!p.dead&&p.hp<p.maxHp){p.hp=Math.min(p.maxHp,p.hp+h);floatTxt(p.x+rand(-3,3),p.y-24,'+'+h,'#7fe07a',1,.5);sfx('heal');}}
+    if(PK('leech')){const p=G.player,heal=leechHeal(p,G.perks);if(heal){p.hp=heal.hp;floatTxt(p.x+rand(-3,3),p.y-24,'+'+heal.h,'#7fe07a',1,.5);sfx('heal');}}
     if(PK('gore')&&!huge&&rng()<PERK_GORE_CHANCE*PK('gore'))G.timers.push({t:.05,fn:()=>goreBurst(z.x,z.y)});}
   sfx(big?'killBig':'kill',z.x,z.y);
   if(huge){
