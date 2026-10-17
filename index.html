@@ -384,7 +384,7 @@ import { isBossWave,waveSize,spawnGap,zombieHp,bossHp,isBaseIntact,waveBonus,isP
 import { magSize,reloadTime,isUnlocked,muzzlePos } from './src/rules/weapons.js';
 import { turretCapacity,turretRate } from './src/rules/turrets.js';
 import { pushOutOfRect,pushOutOfProps } from './src/rules/collision.js';
-import { isWaveCleared } from './src/rules/wave.js';
+import { isWaveCleared,buildWaveQueue } from './src/rules/wave.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -923,13 +923,6 @@ function goreBurst(x,y){
 /* =========================================================
    Vagues, boss et refuges
    ========================================================= */
-function buildWave(){
-  const L=levelOf(),mix=G.endless?L.mix[3]:L.mix[clamp(G.lw,1,5)-1];
-  const total=waveSize(G.wave,G.bossWave,G.endless);
-  const keys=Object.keys(mix),sum=keys.reduce((a,k)=>a+mix[k],0),q=[];
-  for(let i=0;i<total;i++){let r=rng()*sum;for(const k of keys){r-=mix[k];if(r<=0){q.push(k);break;}}if(q.length<=i)q.push(keys[0]);}
-  return q;
-}
 function spawnZombieAt(type,x,y){
   const t=ZT[type],hp=zombieHp(t.hp,G.wave);
   const variant=ri(0,SPR[type].length-1);
@@ -953,7 +946,7 @@ function startWave(){
   hideOverlays();G.state='play';paused=false;G.wave++;G.lw++;G.waveKills=0;
   const L=levelOf();
   G.bossWave=isBossWave(G.lw,G.endless);
-  G.queue=buildWave();G.spawnT=FIRST_SPAWN_DELAY;G.spawnGap=spawnGap(G.wave);G.waveActive=true;G.collectAll=false;
+  G.queue=buildWaveQueue(L,G,rng);G.spawnT=FIRST_SPAWN_DELAY;G.spawnGap=spawnGap(G.wave);G.waveActive=true;G.collectAll=false;
   G.bossPending=G.bossWave?(G.endless?BOSS_ORDER[(G.lw/WAVES_PER_LEVEL-1)%BOSS_ORDER.length]:L.boss):null;G.bossT=BOSS_DELAY;G.bossRef=null;
   for(const o of G.props)if(o.kind==='barrel'&&o.dead&&o.home){o.dead=false;o.hp=BARREL_HP;}
   if(G.lw>1){gctx.globalAlpha=.32;gctx.drawImage(groundClean,0,0);gctx.globalAlpha=1;}

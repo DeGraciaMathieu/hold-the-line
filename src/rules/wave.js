@@ -9,3 +9,13 @@ const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 export function isWaveCleared({waveActive,bossPending,queue,zombies}){
   return waveActive&&!bossPending&&queue.length===0&&!zombies.some(q=>!q.dead);
 }
+
+/* Compose la file des zombies d'une vague en tirant chaque type au sort dans le
+   mix du refuge (le quatrième mix sert au mode infini). rng : fonction () => [0,1[. */
+export function buildWaveQueue(level,{lw,wave,bossWave,endless},rng){
+  const mix=endless?level.mix[3]:level.mix[clamp(lw,1,WAVES_PER_LEVEL)-1];
+  const total=waveSize(wave,bossWave,endless);
+  const keys=Object.keys(mix),sum=keys.reduce((a,k)=>a+mix[k],0),q=[];
+  for(let i=0;i<total;i++){let r=rng()*sum;for(const k of keys){r-=mix[k];if(r<=0){q.push(k);break;}}if(q.length<=i)q.push(keys[0]);}
+  return q;
+}
