@@ -377,9 +377,10 @@ h3{font-size:max(10px,calc(var(--px)*3.8));letter-spacing:.16em;text-transform:u
 
 <script type="module">
 import {
-  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_SPEED,PLAYER_RELOAD_SPEED_FACTOR,MINIGUN_SPIN_SLOW,PLAYER_INV_TIME,PLAYER_HURT_KNOCK,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,CRIT_BASE_CHANCE,CRIT_MULT,COMBO_CAP,COMBO_COIN_BONUS,COMBO_TIME,COIN_RADIUS,TURRET_BASE_COUNT,TURRET_RATE,TURRET_RANGE,DT_MAX,PERK_MAG_BONUS,PERK_RELOAD_FACTOR,PERK_DMG_BONUS,PERK_CRIT_BONUS,PERK_PYRO_CHANCE,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_SPEED_BONUS,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_LEECH_HP,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,PERK_TURRET_RATE_FACTOR,WAVES_PER_LEVEL,WAVE_BASE_SIZE,WAVE_SIZE_PER_WAVE,BOSS_WAVE_SIZE_FACTOR,ENDLESS_WAVE_SIZE_FACTOR,ZOMBIE_HP_PER_WAVE,BOSS_ENDLESS_HP_FROM_WAVE,BOSS_ENDLESS_HP_PER_WAVE,FIRST_SPAWN_DELAY,SPAWN_GAP_BASE,SPAWN_GAP_PER_WAVE,SPAWN_GAP_MIN,BOSS_DELAY,WAVE_BONUS_BASE,WAVE_BONUS_PER_WAVE,WAVE_BONUS_INTACT,WAVE_BONUS_BOSS,INTACT_BASE_RATIO,PERK_WAVES,ENDLESS_PERK_EVERY,REPAIR_PRICE,REPAIR_HP,REINFORCE_PRICE_BASE,REINFORCE_PRICE_STEP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,SKIN,WEAP,ORDER,WLVL,PIERCE_ARMOR,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
+  W,BW,PLAYER_HP,BASE_HP,BARREL_HP,PLAYER_SPEED,PLAYER_RELOAD_SPEED_FACTOR,MINIGUN_SPIN_SLOW,PLAYER_INV_TIME,PLAYER_HURT_KNOCK,PLAYER_LOW_HP,HEARTBEAT_INTERVAL,MELEE_DMG,MELEE_RANGE,MELEE_KNOCK,CRIT_BASE_CHANCE,CRIT_MULT,COMBO_CAP,COMBO_COIN_BONUS,COMBO_TIME,COIN_RADIUS,TURRET_BASE_COUNT,TURRET_RATE,TURRET_RANGE,DT_MAX,PERK_MAG_BONUS,PERK_RELOAD_FACTOR,PERK_DMG_BONUS,PERK_CRIT_BONUS,PERK_PYRO_CHANCE,PYRO_BURN_TIME,PERK_GORE_CHANCE,PERK_SPEED_BONUS,PERK_HP_BONUS,PERK_FORT_BONUS,PERK_LEECH_HP,PERK_MAGNET_RADIUS_BONUS,PERK_MAGNET_COIN_BONUS,PERK_TURRET_RATE_FACTOR,WAVES_PER_LEVEL,FIRST_SPAWN_DELAY,BOSS_DELAY,REPAIR_PRICE,REPAIR_HP,REINFORCE_HP,HEAL_PRICE,TURRET_PRICE,SKIN,WEAP,ORDER,WLVL,PIERCE_ARMOR,LEVELS,BOSSES,BOSS_ORDER,PERKS,ZT,BARRELS,TURRET_POS,H,WW,WH,GH,BX,BY,LW,LH,BD,BHT
 } from './src/config.js';
 import { createRng } from './src/rules/rng.js';
+import { isBossWave,waveSize,spawnGap,zombieHp,bossHp,isBaseIntact,waveBonus,isPerkWave,reinforcePrice } from './src/rules/progression.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -920,13 +921,13 @@ function goreBurst(x,y){
    ========================================================= */
 function buildWave(){
   const L=levelOf(),mix=G.endless?L.mix[3]:L.mix[clamp(G.lw,1,5)-1];
-  let total=Math.round(WAVE_BASE_SIZE+G.wave*WAVE_SIZE_PER_WAVE);if(G.bossWave)total=Math.round(total*BOSS_WAVE_SIZE_FACTOR);if(G.endless)total=Math.round(total*ENDLESS_WAVE_SIZE_FACTOR);
+  const total=waveSize(G.wave,G.bossWave,G.endless);
   const keys=Object.keys(mix),sum=keys.reduce((a,k)=>a+mix[k],0),q=[];
   for(let i=0;i<total;i++){let r=rng()*sum;for(const k of keys){r-=mix[k];if(r<=0){q.push(k);break;}}if(q.length<=i)q.push(keys[0]);}
   return q;
 }
 function spawnZombieAt(type,x,y){
-  const t=ZT[type],hp=t.hp*(1+(G.wave-1)*ZOMBIE_HP_PER_WAVE);
+  const t=ZT[type],hp=zombieHp(t.hp,G.wave);
   const variant=ri(0,SPR[type].length-1);
   const z={type,t,x,y,vx:0,vy:0,kx:0,ky:0,hp,max:hp,flash:0,squash:0,stun:0,atk:rand(.3,1),atkAnim:0,
     anim:rng()*4,face:1,S:SPR[type][variant],cfg:ZCFG[type],speed:t.speed*rand(.85,1.15),groan:rand(1,6),dead:false,fr:0,tp:false};
@@ -937,7 +938,7 @@ function edgePoint(side){const m=14;
 function spawnZombie(type,side){const[x,y]=edgePoint(side);spawnZombieAt(type,x+rand(-8,8),y+rand(-8,8));}
 function spawnBoss(id){
   const d=BOSSES[id],side=ri(0,3),[x,y]=edgePoint(side);
-  const scale=G.endless?1+(G.wave-BOSS_ENDLESS_HP_FROM_WAVE)*BOSS_ENDLESS_HP_PER_WAVE:1,hp=d.hp*scale;
+  const hp=bossHp(d.hp,G.wave,G.endless);
   const z={type:'boss',boss:true,id,t:d,x,y,vx:0,vy:0,kx:0,ky:0,hp,max:hp,flash:0,squash:0,stun:0,atk:1,atkAnim:0,anim:0,face:1,
     S:SPRB[id],cfg:BCFG[id],speed:d.speed,groan:3,dead:false,fr:0,tp:false,state:'walk',stT:0,cd:{charge:3,stomp:2,summon:4,spit:2}};
   G.zombies.push(z);G.bossRef=z;G.ghostBoss=1;
@@ -947,8 +948,8 @@ function spawnBoss(id){
 function startWave(){
   hideOverlays();G.state='play';paused=false;G.wave++;G.lw++;G.waveKills=0;
   const L=levelOf();
-  G.bossWave=G.endless?G.lw%WAVES_PER_LEVEL===0:G.lw===WAVES_PER_LEVEL;
-  G.queue=buildWave();G.spawnT=FIRST_SPAWN_DELAY;G.spawnGap=Math.max(SPAWN_GAP_MIN,SPAWN_GAP_BASE-G.wave*SPAWN_GAP_PER_WAVE);G.waveActive=true;G.collectAll=false;
+  G.bossWave=isBossWave(G.lw,G.endless);
+  G.queue=buildWave();G.spawnT=FIRST_SPAWN_DELAY;G.spawnGap=spawnGap(G.wave);G.waveActive=true;G.collectAll=false;
   G.bossPending=G.bossWave?(G.endless?BOSS_ORDER[(G.lw/WAVES_PER_LEVEL-1)%BOSS_ORDER.length]:L.boss):null;G.bossT=BOSS_DELAY;G.bossRef=null;
   for(const o of G.props)if(o.kind==='barrel'&&o.dead&&o.home){o.dead=false;o.hp=BARREL_HP;}
   if(G.lw>1){gctx.globalAlpha=.32;gctx.drawImage(groundClean,0,0);gctx.globalAlpha=1;}
@@ -965,7 +966,7 @@ function startWave(){
 function waveCleared(){
   G.waveActive=false;G.slowT=.9;G.ts=.2;G.freeze=Math.max(G.freeze,.12);shake(.4);G.collectAll=true;
   G.timers.push({t:.9,fn:()=>{
-    const intact=G.base.hp/G.base.maxHp>INTACT_BASE_RATIO,bonus=WAVE_BONUS_BASE+G.wave*WAVE_BONUS_PER_WAVE+(intact?WAVE_BONUS_INTACT:0)+(G.bossWave?WAVE_BONUS_BOSS:0);
+    const intact=isBaseIntact(G.base.hp,G.base.maxHp),bonus=waveBonus(G.wave,G.bossWave,intact);
     G.money+=bonus;G.earned+=bonus;G.fx.money=true;
     const title=G.bossWave&&!G.endless?`${levelOf().name} tient bon`:`Vague ${G.endless?G.wave:G.lw} repoussée`;
     banner(title,`Prime +$${bonus}${intact?' · rempart intact':''}`,'');sfx('clear');
@@ -976,7 +977,7 @@ function afterWave(){
   if(G.over)return;
   if(G.bossWave&&!G.endless&&G.level===LEVELS.length-1){showWin();return;}
   if(G.bossWave&&!G.endless)G.levelDone=true;
-  const perkNow=G.bossWave||(!G.endless&&PERK_WAVES.includes(G.lw))||(G.endless&&G.lw%ENDLESS_PERK_EVERY===0);
+  const perkNow=isPerkWave(G.lw,G.bossWave,G.endless);
   if(perkNow)openPerk();else openShop();
 }
 function travel(){
@@ -1954,7 +1955,6 @@ function choosePerk(i){
 $('#perkList').addEventListener('click',e=>{const b=e.target.closest('[data-perk]');if(b)choosePerk(+b.dataset.perk);});
 
 function openShop(){if(G.over)return;G.state='shop';mouse.down=false;$('#banner').className='';renderShop();showOverlay('shop');}
-const reinforcePrice=()=>REINFORCE_PRICE_BASE+G.reinforce*REINFORCE_PRICE_STEP;
 function renderRoute(){
   $('#route').innerHTML=LEVELS.map((L,i)=>{const done=i<G.level||(i===G.level&&G.levelDone)||G.endless,cur=i===G.level&&!G.levelDone&&!G.endless;
     const dots=cur?`<span class="dots">${[1,2,3,4,5].map(k=>`<i class="${k===5?'bossdot ':''}${k<=G.lw?'on':''}"></i>`).join('')}</span>`:'';
@@ -1986,7 +1986,7 @@ function renderShop(flashKey,ok){
   const cap=turretCap();
   const U=[
     {key:'repair',glyph:'+',name:'Réparer le rempart',desc:`+${REPAIR_HP} PV · ${Math.ceil(b.hp)}/${b.maxHp}`,price:REPAIR_PRICE,dis:b.hp>=b.maxHp,label:b.hp>=b.maxHp?'Intact':'Réparer'},
-    {key:'reinforce',glyph:'▲',name:'Renforcer le rempart',desc:`+${REINFORCE_HP} PV maximum, et autant de réparés`,price:reinforcePrice(),dis:false,label:'Renforcer'},
+    {key:'reinforce',glyph:'▲',name:'Renforcer le rempart',desc:`+${REINFORCE_HP} PV maximum, et autant de réparés`,price:reinforcePrice(G.reinforce),dis:false,label:'Renforcer'},
     {key:'heal',glyph:'♥',name:'Trousse de soins',desc:`Vie au maximum · ${Math.ceil(p.hp)}/${p.maxHp}`,price:HEAL_PRICE,dis:p.hp>=p.maxHp,label:p.hp>=p.maxHp?'En forme':'Se soigner'},
     {key:'turret',glyph:'◎',name:'Tourelle automatique',desc:`Montée sur le toit, tire seule · ${G.turrets.length}/${cap}`,price:TURRET_PRICE,dis:G.turrets.length>=cap,label:G.turrets.length>=cap?'Complet':'Installer'},
   ];
@@ -2002,7 +2002,7 @@ $('#shop').addEventListener('click',e=>{
   if(act==='buy'){const w=WEAP[id];price=w.price;apply=()=>{p.owned[id]=true;p.mag[id]=MAG(id);p.res[id]=w.ammo?w.ammo.n:Infinity;p.w=id;};}
   else if(act==='ammo'){const w=WEAP[id];price=w.ammo.p;apply=()=>{p.res[id]+=w.ammo.n;};}
   else if(act==='repair'){price=REPAIR_PRICE;apply=()=>{b.hp=Math.min(b.maxHp,b.hp+REPAIR_HP);};}
-  else if(act==='reinforce'){price=reinforcePrice();apply=()=>{b.maxHp+=REINFORCE_HP;b.hp=Math.min(b.maxHp,b.hp+REINFORCE_HP);G.reinforce++;};}
+  else if(act==='reinforce'){price=reinforcePrice(G.reinforce);apply=()=>{b.maxHp+=REINFORCE_HP;b.hp=Math.min(b.maxHp,b.hp+REINFORCE_HP);G.reinforce++;};}
   else if(act==='heal'){price=HEAL_PRICE;apply=()=>{p.hp=p.maxHp;};}
   else if(act==='turret'){price=TURRET_PRICE;apply=addTurret;}
   const key=id||act;
