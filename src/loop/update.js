@@ -1,4 +1,4 @@
-import { BX,GH,HEARTBEAT_INTERVAL,PLAYER_LOW_HP,TURRET_RANGE,WEAP,WH,WW } from '../config.js';
+import { BX,GH,HEARTBEAT_INTERVAL,PLAYER_LOW_HP,TURRET_RANGE,WEAP,WH,WW,BOSS_AGGRO_MIXED,BOSS_AGGRO_BASE,SHOCKWAVE_RADIUS,SHOCKWAVE_DMG,SHOCKWAVE_KNOCK } from '../config.js';
 import { coinValue,pickupRadius } from '../rules/coins.js';
 import { movePlayer } from '../rules/player.js';
 import { turretRate } from '../rules/turrets.js';
@@ -106,7 +106,7 @@ export function bossAI(z,dt,dp,dpx,dpy,pAlive){
   const t=z.t,b=G.base,p=G.player;
   for(const k in z.cd)z.cd[k]-=dt;
   z.stT-=dt;
-  const wantP=pAlive&&(t.target==='player'||(t.target==='mixed'&&dp<130)||(t.target==='base'&&dp<60));
+  const wantP=pAlive&&(t.target==='player'||(t.target==='mixed'&&dp<BOSS_AGGRO_MIXED)||(t.target==='base'&&dp<BOSS_AGGRO_BASE));
   z.tp=wantP;
   if(z.state==='tele'){z.vx*=.85;z.vy*=.85;if(Math.floor(z.stT*12)%2)z.flash=.04;if(rng()<.5)dust(z.x,z.y,1);
     if(z.stT<=0){z.state='charge';z.stT=.75;z.chit=false;sfx('roar',z.x,z.y,.8);}return true;}
@@ -141,7 +141,7 @@ export function shockwave(z){
   dust(z.x,z.y,18);chips(z.x,z.y,2,10,levelOf().snow?['#dfe6ee','#a8b4c4']:['#4a3c2c','#5a4834','#2c241b']);
   shake(.6);G.freeze=Math.max(G.freeze,.05);sfx('stomp',z.x,z.y);
   const p=G.player,dx=p.x-z.x,dy=p.y-z.y,d=Math.hypot(dx,dy)||1;
-  if(!p.dead&&d<58){hurtPlayer(18,z);p.kx+=dx/d*280;p.ky+=dy/d*280;}
+  if(!p.dead&&d<SHOCKWAVE_RADIUS){hurtPlayer(SHOCKWAVE_DMG,z);p.kx+=dx/d*SHOCKWAVE_KNOCK;p.ky+=dy/d*SHOCKWAVE_KNOCK;}
   for(const o of G.zombies){if(o===z||o.dead)continue;const ox=o.x-z.x,oy=o.y-z.y,od=Math.hypot(ox,oy)||1;if(od<50){o.kx+=ox/od*160;o.ky+=oy/od*160;o.stun=.4;}}
 }
 export function summon(z){

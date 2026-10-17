@@ -1,4 +1,4 @@
-import { BARREL_HP,BOSS_DELAY,BOSS_ORDER,BX,BY,FIRST_SPAWN_DELAY,H,LEVELS,PERKS,PERK_FORT_BONUS,PERK_HP_BONUS,W,WAVES_PER_LEVEL,WH,WW } from '../config.js';
+import { BARREL_HP,BOSS_DELAY,BOSS_ORDER,BX,BY,FIRST_SPAWN_DELAY,H,LEVELS,PERKS,PERK_FORT_BONUS,PERK_HP_BONUS,W,WAVES_PER_LEVEL,WH,WW,WAVE_CLEAR_SLOW,WAVE_CLEAR_TS,WAVE_CLEAR_FREEZE,WAVE_CLEAR_DELAY } from '../config.js';
 import { isBaseIntact,isBossWave,isPerkWave,spawnGap,waveBonus } from '../rules/progression.js';
 import { buildWaveQueue } from '../rules/wave.js';
 import { addTurret } from './damage.js';
@@ -42,14 +42,14 @@ export function startWave(){
   $('#hud').hidden=false;
 }
 export function waveCleared(){
-  G.waveActive=false;G.slowT=.9;G.ts=.2;G.freeze=Math.max(G.freeze,.12);shake(.4);G.collectAll=true;
+  G.waveActive=false;G.slowT=WAVE_CLEAR_SLOW;G.ts=WAVE_CLEAR_TS;G.freeze=Math.max(G.freeze,WAVE_CLEAR_FREEZE);shake(.4);G.collectAll=true;
   G.timers.push({t:.9,fn:()=>{
     const intact=isBaseIntact(G.base.hp,G.base.maxHp),bonus=waveBonus(G.wave,G.bossWave,intact);
     G.money+=bonus;G.earned+=bonus;G.fx.money=true;
     const title=G.bossWave&&!G.endless?`${levelOf().name} tient bon`:`Vague ${G.endless?G.wave:G.lw} repoussée`;
     banner(title,`Prime +$${bonus}${intact?' · rempart intact':''}`,'');sfx('clear');
   }});
-  G.timers.push({t:3.2,fn:afterWave});
+  G.timers.push({t:WAVE_CLEAR_DELAY,fn:afterWave});
 }
 export function afterWave(){
   if(G.over)return;

@@ -97,6 +97,19 @@ export const INTACT_BASE_RATIO=.9;
 export const PERK_WAVES=[2,4];
 export const ENDLESS_PERK_EVERY=3;
 
+/* Boss : seuils d'aggro et onde de choc */
+export const BOSS_AGGRO_MIXED=130;
+export const BOSS_AGGRO_BASE=60;
+export const SHOCKWAVE_RADIUS=58;
+export const SHOCKWAVE_DMG=18;
+export const SHOCKWAVE_KNOCK=280;
+
+/* Fin de vague : ralenti et délai avant l'écran suivant */
+export const WAVE_CLEAR_SLOW=.9;
+export const WAVE_CLEAR_TS=.2;
+export const WAVE_CLEAR_FREEZE=.12;
+export const WAVE_CLEAR_DELAY=3.2;
+
 /* Boutique */
 export const REPAIR_PRICE=80;
 export const REPAIR_HP=120;
