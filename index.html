@@ -383,6 +383,7 @@ import { createRng } from './src/rules/rng.js';
 import { isBossWave,waveSize,spawnGap,zombieHp,bossHp,isBaseIntact,waveBonus,isPerkWave,reinforcePrice } from './src/rules/progression.js';
 import { magSize,reloadTime,isUnlocked,muzzlePos } from './src/rules/weapons.js';
 import { turretCapacity,turretRate } from './src/rules/turrets.js';
+import { pushOutOfRect,pushOutOfProps } from './src/rules/collision.js';
 (()=>{
 'use strict';
 /* =========================================================
@@ -1187,19 +1188,8 @@ const turretCap=()=>turretCapacity(G.perks);
 /* =========================================================
    Collisions
    ========================================================= */
-function pushRect(e,r){
-  const b=G.base,cx=clamp(e.x,b.x0,b.x1),cy=clamp(e.y,b.y0,b.y1),dx=e.x-cx,dy=e.y-cy,d2=dx*dx+dy*dy;
-  if(d2>=r*r)return false;
-  if(d2>1e-4){const d=Math.sqrt(d2);e.x=cx+dx/d*r;e.y=cy+dy/d*r;}
-  else{const l=e.x-b.x0,rr=b.x1-e.x,t=e.y-b.y0,bt=b.y1-e.y,m=Math.min(l,rr,t,bt);
-    if(m===l)e.x=b.x0-r;else if(m===rr)e.x=b.x1+r;else if(m===t)e.y=b.y0-r;else e.y=b.y1+r;}
-  return true;
-}
-function pushProps(e,r){
-  for(const o of G.props){if(o.dead)continue;if(Math.abs(o.x-e.x)>30||Math.abs(o.y-e.y)>30)continue;
-    for(const[cx,cy,cr]of o.cols){const dx=e.x-(o.x+cx),dy=e.y-(o.y+cy),rr=r+cr,d2=dx*dx+dy*dy;
-      if(d2<rr*rr&&d2>1e-4){const d=Math.sqrt(d2),k=(rr-d)/d;e.x+=dx*k;e.y+=dy*k;}}}
-}
+function pushRect(e,r){const n=pushOutOfRect(e,r,G.base);e.x=n.x;e.y=n.y;return n.hit;}
+function pushProps(e,r){const n=pushOutOfProps(e,r,G.props);e.x=n.x;e.y=n.y;}
 
 /* =========================================================
    Mise à jour
